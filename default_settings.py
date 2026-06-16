@@ -17,7 +17,7 @@ def get_default_settings():
         MAX_GAIN=3000.0,
         WHOLE_NOTE=1.6,
         PITCH_INTERP_VEL=0.001,
-        GAIN_INTERP_VEL=0.001,
+        GAIN_INTERP_VEL=0.0001,
         BASE_PITCH=440.0,
         NOTES={
             'A': 1,
