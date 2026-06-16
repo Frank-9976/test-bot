@@ -13,7 +13,7 @@ Sends the provided message.
 
 
 $source
-Uploads this bot's current python source files.
+Sends a link to the bot's github repo.
 
 
 $settings

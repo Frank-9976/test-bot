@@ -18,7 +18,6 @@ def dump_user_settings_table():
 
 # discord.py
 import discord
-TRIGGER_CHAR = '$'
 
 # set intents
 intents = discord.Intents.default()
@@ -44,18 +43,15 @@ def parse_num(num_str):
     else:
         return float(num_str)
 
-# for $source
-from os import listdir
-
 # returns (command, args, args_str) upon success
 # returns (None, None, None) if lacking the trigger
 def lexer(content):
     args = content.split(' ')
     if args[0] == '-#':
         args.pop(0)
-    if TRIGGER_CHAR not in args[0]:
+    if '$' not in args[0]:
         return None, None, None
-    command = ''.join([c for c in args[0] if c != TRIGGER_CHAR])
+    command = ''.join([c for c in args[0] if c != '$'])
     args_str = ' '.join(args[1:])
     return command, args, args_str
 
@@ -92,7 +88,7 @@ async def parse_and_execute(message, command, args, args_str):
         return
 
     if command == 'source':
-        await reply(files=[discord.File(f) for f in listdir('.') if f[-3:] == '.py'])
+        await reply('https://github.com/Frank-9976/test-bot')
         return
 
     if command == 'settings':
@@ -202,5 +198,5 @@ async def on_message(message):
     # do everything else
     await parse_and_execute(message, command, args, args_str)
 
-# python server.py < token.txt
-client.run(input())
+with open('token.txt') as fp:
+    client.run(fp.read())
