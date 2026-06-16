@@ -2,20 +2,19 @@
 import synth
 
 # user settings
-from default_settings import defaults, settings_type
-from copy import deepcopy
+from default_settings import get_default_settings, settings_type
+import pickle
 from pprint import pformat
-import json
-DUMP_PATH : str = 'user_settings_table.json'
+DUMP_PATH : str = 'user_settings_table.pickle'
 user_settings_table : dict[str, settings_type] = {}
 try:
-    with open(DUMP_PATH, 'r') as fp:
-        user_settings_table = json.load(fp)
+    with open(DUMP_PATH, 'rb') as fp:
+        user_settings_table = pickle.load(fp)
 except FileNotFoundError:
     pass
 def dump_user_settings_table():
-    with open(DUMP_PATH, 'w') as fp:
-        json.dump(user_settings_table, fp)
+    with open(DUMP_PATH, 'wb') as fp:
+        pickle.dump(user_settings_table, fp)
 
 # discord.py
 import discord
@@ -45,13 +44,12 @@ def parse_num(num_str : str):
         return float(num_str)
 
 # returns (command, args, args_str) upon success
-# returns (None, None, None) if lacking the trigger
 def lexer(content : str):
     args = content.split(' ')
     if args[0] == '-#':
         args.pop(0)
     if '$' not in args[0]:
-        return None, None, None
+        raise Exception()
     command = ''.join([c for c in args[0] if c != '$'])
     args_str = ' '.join(args[1:])
     return command, args, args_str
@@ -62,7 +60,7 @@ async def parse_and_execute(message : discord.Message, command : str, args : lis
     # register new users to the user settings table
     user_id = str(message.author.id) # string conversion cuz JSON keys footgun moment
     if user_id not in user_settings_table:
-        user_settings_table[user_id] = deepcopy(defaults)
+        user_settings_table[user_id] = get_default_settings()
     user_settings = user_settings_table[user_id]
 
     # ping-reply and cache the reply
@@ -98,7 +96,7 @@ async def parse_and_execute(message : discord.Message, command : str, args : lis
         return
 
     if command == 'reset':
-        user_settings_table[user_id] = deepcopy(defaults)
+        user_settings_table[user_id] = get_default_settings()
         await reply('all your settings have been reset :P')
         dump_user_settings_table()
         return
@@ -176,8 +174,9 @@ async def on_message_edit(before : discord.Message, after : discord.Message):
         return
 
     # must be a command
-    command, args, args_str = lexer(after.content)
-    if not command or not args or not args_str:
+    try:
+        command, args, args_str = lexer(after.content)
+    except Exception:
         return
 
     # delete old reply and send new one
@@ -192,12 +191,14 @@ async def on_message(message : discord.Message):
         return
 
     # lexing
-    command, args, args_str = lexer(message.content)
-    if not command or not args or not args_str:
+    try:
+        command, args, args_str = lexer(message.content)
+    except Exception:
         return
 
     # do everything else
     await parse_and_execute(message, command, args, args_str)
 
+# run the server
 with open('token.txt') as fp:
     client.run(fp.read())

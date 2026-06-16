@@ -1,5 +1,5 @@
 token.txt
-user_settings_table.json
+user_settings_table.pickle
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
