@@ -2,11 +2,12 @@
 import synth
 
 # user settings
+from default_settings import defaults, settings_type
 from copy import deepcopy
 from pprint import pformat
 import json
-DUMP_PATH = 'user_settings_table.json'
-user_settings_table = {}
+DUMP_PATH : str = 'user_settings_table.json'
+user_settings_table : dict[str, settings_type] = {}
 try:
     with open(DUMP_PATH, 'r') as fp:
         user_settings_table = json.load(fp)
@@ -36,7 +37,7 @@ async def on_ready():
     await client.change_presence(activity=discord.Game('$help'))
 
 # used to parse fractions as floats
-def parse_num(num_str):
+def parse_num(num_str : str):
     slash_split = num_str.split('/')
     if len(slash_split) == 2:
         return float(slash_split[0]) / float(slash_split[1])
@@ -45,7 +46,7 @@ def parse_num(num_str):
 
 # returns (command, args, args_str) upon success
 # returns (None, None, None) if lacking the trigger
-def lexer(content):
+def lexer(content : str):
     args = content.split(' ')
     if args[0] == '-#':
         args.pop(0)
@@ -56,24 +57,25 @@ def lexer(content):
     return command, args, args_str
 
 # main server logic
-async def parse_and_execute(message, command, args, args_str):
+sent_message_cache : dict[int, discord.Message] = {} # keys are user message id's, values are bot replies
+async def parse_and_execute(message : discord.Message, command : str, args : list[str], args_str : str):
     # register new users to the user settings table
     user_id = str(message.author.id) # string conversion cuz JSON keys footgun moment
     if user_id not in user_settings_table:
-        user_settings_table[user_id] = deepcopy(synth.defaults)
+        user_settings_table[user_id] = deepcopy(defaults)
     user_settings = user_settings_table[user_id]
 
     # ping-reply and cache the reply
-    async def reply(content=None, **kwargs):
-        sent_message = await message.channel.send(content, **kwargs, reference=message)
+    async def reply(content : str | None = None, **kwargs : object):
+        sent_message : discord.Message = await message.channel.send(content, **kwargs, reference=message) # type: ignore
         sent_message_cache[message.id] = sent_message
 
     # edit a previous reply
-    async def edit(content):
+    async def edit(content : str):
         await sent_message_cache[message.id].edit(content=content)
 
     # reply and then delete a previous reply
-    async def re_reply(content=None, **kwargs):
+    async def re_reply(content : str | None = None, **kwargs : object):
         old_message = sent_message_cache[message.id]
         await reply(content, **kwargs)
         await old_message.delete()
@@ -96,7 +98,7 @@ async def parse_and_execute(message, command, args, args_str):
         return
 
     if command == 'reset':
-        user_settings_table[user_id] = deepcopy(synth.defaults)
+        user_settings_table[user_id] = deepcopy(defaults)
         await reply('all your settings have been reset :P')
         dump_user_settings_table()
         return
@@ -121,19 +123,19 @@ async def parse_and_execute(message, command, args, args_str):
 
     # $<setting>
     command_u = command.upper()
-    if command_u in user_settings:
-        setting = user_settings[command_u]
-        
+    if hasattr(user_settings, command_u):
+        setting = getattr(user_settings, command_u)
+
         # $<numerical setting>
         if isinstance(setting, float):
-            user_settings[command_u] = parse_num(args[1])
-            await reply(f'set {command_u} to {user_settings[command_u]}')
+            setattr(user_settings, command_u, parse_num(args[1]))
+            await reply(f'set {command_u} to {getattr(user_settings, command_u)}')
         elif isinstance(setting, int):
-            user_settings[command_u] = int(args[1])
-            await reply(f'set {command_u} to {user_settings[command_u]}')
+            setattr(user_settings, command_u, int(args[1]))
+            await reply(f'set {command_u} to {getattr(user_settings, command_u)}')
 
         # $<dictionary setting>
-        elif isinstance(setting, dict):
+        else:
             
             # $<dictionary setting> [<key 1> <key 2> ...] [<value 1> <value 2> ...]
             if args_str[0] == '[':
@@ -155,9 +157,8 @@ async def parse_and_execute(message, command, args, args_str):
         return
 
 # reply to command edits
-sent_message_cache = {} # keys are user message id's, values are bot replies
 @client.event
-async def on_message_edit(before, after):
+async def on_message_edit(before : discord.Message, after : discord.Message):
     # must be in discord.py cache (user messages)
     if not before:
         return
@@ -176,7 +177,7 @@ async def on_message_edit(before, after):
 
     # must be a command
     command, args, args_str = lexer(after.content)
-    if not command:
+    if not command or not args or not args_str:
         return
 
     # delete old reply and send new one
@@ -185,14 +186,14 @@ async def on_message_edit(before, after):
 
 # reply to commands
 @client.event
-async def on_message(message):
+async def on_message(message : discord.Message):
     # no self-replies
     if message.author == client.user:
         return
 
     # lexing
     command, args, args_str = lexer(message.content)
-    if not command:
+    if not command or not args or not args_str:
         return
 
     # do everything else

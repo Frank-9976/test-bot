@@ -1,11 +1,11 @@
-defaults = {
-    'SAMPLE_RATE': 44100,
-    'MAX_GAIN': 3000.0,
-    'WHOLE_NOTE': 1.6,
-    'PITCH_INTERP_VEL': 0.001,
-    'GAIN_INTERP_VEL': 0.01,
-    'BASE_PITCH': 440.0,
-    'NOTES': {
+class settings_type:
+    SAMPLE_RATE = 44100
+    MAX_GAIN = 3000.0
+    WHOLE_NOTE = 1.6
+    PITCH_INTERP_VEL = 0.001
+    GAIN_INTERP_VEL = 0.01
+    BASE_PITCH = 440.0
+    NOTES : dict[str, float] = {
         'A': 1,
         'As': 16/15, 
         'B': 9/8,
@@ -18,9 +18,10 @@ defaults = {
         'Fs': 5/3,
         'G': 7/4,
         'Gs': 15/8, 
-    },
-    'MODIFIERS': {
+    }
+    MODIFIERS : dict[str, float] = {
         '-': 1/2,
         '+': 2,
-    },
-}
+    }
+
+defaults = settings_type()
