@@ -36,5 +36,6 @@ def get_default_settings():
         MODIFIERS={
             '-': 1/2,
             '+': 2,
+            '!': -1,
         },
     )
