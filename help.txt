@@ -1,0 +1,74 @@
+Basic format of commands:
+[-#] $<command> <arg1> <arg2> ...
+Starting a command with -# is optional and does nothing.
+It is provided for conveniece.
+
+
+$help
+Displays this help file.
+
+
+$echo <message>
+Sends the provided message.
+
+
+$source
+Uploads this bot's current python source files.
+
+
+$settings
+Sends the requesting user's settings.
+Settings are individual to each discord user and persistent.
+
+
+$reset
+Resets the requesting user's settings to their defaults.
+
+
+$play <instructions>
+Synthesizes an audio file from the provided instructions.
+Instructions are space-separated and consist of three parts:
+
+"Notes": alphabetical characters in sequence, i.e. A, As, B, ..., G, Gs
+(By convention, s stands for sharp.)
+If a valid note is not specified, a rest (silence) is played instead.
+
+"Durations": an integer n specifying the duration of 1/n-th of a measure.
+If not specified, the last specified duration is used instead, if it exists.
+Otherwise, the default duration is 8th notes, i.e. n = 8.
+
+"Modifiers": non-alphanumeric characters in any order, i.e. +, -.
+These may stack and provide multiplicative pitch modifiers.
+
+
+$<numerical setting> <value>
+Sets the specified numerical setting to the specified value.
+Values may be specified as floats, i.e. "0.75", or as fractions, i.e. "3/4".
+
+Such settings include:
+
+SAMPLE_RATE: the sample rate of the synthesized audio file.
+MAX_GAIN: the amplitude of the synthesized sine waves.
+WHOLE_NOTE: the duration of a measure in seconds.
+PITCH_INTERP_VEL: how fast pitches are changed between different notes.
+GAIN_INTERP_VEL: how fast gain is changed between rests and notes.
+BASE_PITCH: the default pitch of a note, before any multipliers.
+
+
+$<dictionary setting> <key> <value>
+Sets the specified key of the specified setting to the specified value.
+New keys may also be added via this command.
+
+Such settings include:
+
+NOTES:
+Keys are alphabetical note names; they may be any length.
+Values are relative pitches to the base pitch; they act as multipliers.
+
+MODIFIERS:
+Keys are non-alphanumeric characters; they must be one character.
+Values are the pitch multipliers that they shall incur.
+
+
+$<dictionary setting> [<key 1> <key 2> ...] [<value 1> <value 2> ...]
+A batch version of the previous command that sets key i to value i.
