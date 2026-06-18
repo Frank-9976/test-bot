@@ -21,7 +21,7 @@ def get_default_settings():
         GAIN_INTERP_VEL=0.0001,
         BASE_PITCH=440.0,
         NOTES={
-            'A': 1,
+            'A': 1.0,
             'As': 16/15, 
             'B': 9/8,
             'C': 6/5,
@@ -36,10 +36,10 @@ def get_default_settings():
         },
         MODIFIERS={
             '-': 1/2,
-            '+': 2,
-            '!': -1,
+            '+': 2.0,
+            '!': -1.0,
         },
         OVERTONES={
-            '1': 1
+            '1': 1.0
         }
     )

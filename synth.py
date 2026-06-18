@@ -16,11 +16,13 @@ def note_parser(numbers : str, letters : str, other : str, settings : settings_t
     return hz, duration
 
 async def get_samples(notes : list[str], settings : settings_type) -> list[int]:
-    def wave_fn(x : float):
+    def wave_fn(x : float, gain : float):
         total = 0
         for overtone in settings.OVERTONES:
             total += settings.OVERTONES[overtone] * math.sin(utils.parse_num(overtone) * x)
-        return total
+        out = int(total * gain * settings.MAX_GAIN)
+        return int(settings.MAX_GAIN) if out > settings.MAX_GAIN else int(-settings.MAX_GAIN) if out < -settings.MAX_GAIN else out
+    
     x = 0
     dx = 0
     gain = 1
@@ -45,20 +47,23 @@ async def get_samples(notes : list[str], settings : settings_type) -> list[int]:
         gain_target = 0 if hz == 0 else 1
         gain = (1 - settings.GAIN_INTERP_VEL) * gain + settings.GAIN_INTERP_VEL * gain_target
 
-        samples.append(int(wave_fn(x) * gain * settings.MAX_GAIN))
+        samples.append(wave_fn(x, gain))
         samples_left -= 1
         
     return samples
 
 import random
 from scipy.fft import fft, ifft
+from scipy.stats import norm
 #import matplotlib.pyplot as plt
 
-def get_noise_samples(settings : settings_type) -> list[int]:
+def get_noise_samples(settings : settings_type, pitch : float, dev : float) -> list[int]:
     min_gain = int(-1 * settings.MAX_GAIN)
     max_gain = int(settings.MAX_GAIN)
-    samples = [random.randint(min_gain, max_gain) for _ in range(10 * settings.SAMPLE_RATE)]
-    freqs = fft(samples, n=settings.SAMPLE_RATE//2)
+    n = settings.SAMPLE_RATE // 2
+    samples = [random.randint(min_gain, max_gain) for _ in range(n)]
+    freqs = fft(samples)
+    freqs *= [dev * norm.pdf(x, loc=pitch, scale=dev) for x in range(n)]
 
     #plt.plot(abs(freqs)) # type: ignore
     #plt.show() # type: ignore

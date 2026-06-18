@@ -16,13 +16,15 @@ $source
 Sends a link to the bot's github repo.
 
 
-$settings
+$settings [setting]
 Sends the requesting user's settings.
 Settings are individual to each discord user and persistent.
+If a setting is specified, sends only that setting.
 
 
-$reset
+$reset [setting]
 Resets the requesting user's settings to their defaults.
+If a setting is specified, resets only that setting.
 
 
 $play <instructions>
@@ -71,7 +73,7 @@ Values are the pitch multipliers that they shall incur.
 
 OVERTONES:
 Keys are ratios to the fundamental frequency, given as a float or fraction.
-Values are amplitudes.
+Values are amplitudes. Excess amplitudes are limited by the max gain.
 
 
 $<dictionary setting> [<key 1> <key 2> ...] [<value 1> <value 2> ...]

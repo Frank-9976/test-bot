@@ -60,7 +60,7 @@ async def parse_and_execute(message : discord.Message, command : str, args : lis
 
     # ping-reply and cache the reply
     async def reply(content : str | None = None, **kwargs : object):
-        sent_message : discord.Message = await message.channel.send(content, **kwargs, reference=message) # type: ignore
+        sent_message : discord.Message = await message.channel.send(content, **kwargs, reference=message, mention_author=False) # type: ignore
         sent_message_cache[message.id] = sent_message
 
     # edit a previous reply
@@ -87,12 +87,21 @@ async def parse_and_execute(message : discord.Message, command : str, args : lis
         return
 
     if command == 'settings':
-        await reply(pformat(user_settings))
+        if len(args) == 1:
+            await reply(pformat(user_settings))
+        else:
+            await reply(getattr(user_settings, args[1].upper()))
         return
 
     if command == 'reset':
-        user_settings_table[user_id] = get_default_settings()
-        await reply('all your settings have been reset :P')
+        if len(args) == 1:
+            user_settings_table[user_id] = get_default_settings()
+            await reply('all your settings have been reset :P')
+        else:
+            setting = args[1].upper()
+            default = getattr(get_default_settings(), setting)
+            setattr(user_settings_table[user_id], args[1].upper(), default)
+            await reply(f'reset {setting} to its default :3')
         dump_user_settings_table()
         return
 
@@ -109,7 +118,7 @@ async def parse_and_execute(message : discord.Message, command : str, args : lis
         return
 
     if command == 'noise':
-        samples = synth.get_noise_samples(user_settings)
+        samples = synth.get_noise_samples(user_settings, utils.parse_num(args[1]), utils.parse_num(args[2]))
         buf = synth.buf_from_samples(samples, user_settings)
         await reply(file=discord.File(buf, filename='noise.wav'))
         return
