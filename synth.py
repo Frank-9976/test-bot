@@ -52,24 +52,16 @@ async def get_samples(notes : list[str], settings : settings_type) -> list[int]:
         
     return samples
 
-import random
-from scipy.fft import fft, ifft
+from scipy.fft import ifft
 from scipy.stats import norm
-#import matplotlib.pyplot as plt
 
 def get_noise_samples(settings : settings_type, pitch : float, dev : float) -> list[int]:
-    min_gain = int(-1 * settings.MAX_GAIN)
-    max_gain = int(settings.MAX_GAIN)
-    n = settings.SAMPLE_RATE // 2
-    samples = [random.randint(min_gain, max_gain) for _ in range(n)]
-    freqs = fft(samples)
-    freqs *= [dev * norm.pdf(x, loc=pitch, scale=dev) for x in range(n)]
-
-    #plt.plot(abs(freqs)) # type: ignore
-    #plt.show() # type: ignore
-
-    samples = [int(abs(x)) for x in ifft(freqs)]
-    return samples
+    freqs = [norm.pdf(x, loc=pitch, scale=dev) for x in range(settings.SAMPLE_RATE)]
+    samples = ifft(freqs).real
+    max_sample = max(samples)
+    min_sample = min(samples)
+    samples = ((samples - min_sample) / (max_sample - min_sample) - 0.5) * 2 * settings.MAX_GAIN
+    return [int(x) for x in samples]
 
 import wave
 import io
