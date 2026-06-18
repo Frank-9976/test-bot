@@ -1,6 +1,9 @@
 # audio synth
 import synth
 
+# random bs
+import utils
+
 # user settings
 from default_settings import get_default_settings, settings_type
 import pickle
@@ -34,14 +37,6 @@ async def on_ready():
     #print(await CT.sync())
     
     await client.change_presence(activity=discord.Game('$help'))
-
-# used to parse fractions as floats
-def parse_num(num_str : str):
-    slash_split = num_str.split('/')
-    if len(slash_split) == 2:
-        return float(slash_split[0]) / float(slash_split[1])
-    else:
-        return float(num_str)
 
 # returns (command, args, args_str) upon success
 def lexer(content : str):
@@ -126,7 +121,7 @@ async def parse_and_execute(message : discord.Message, command : str, args : lis
 
         # $<numerical setting>
         if isinstance(setting, float):
-            setattr(user_settings, command_u, parse_num(args[1]))
+            setattr(user_settings, command_u, utils.parse_num(args[1]))
             await reply(f'set {command_u} to {getattr(user_settings, command_u)}')
         elif isinstance(setting, int):
             setattr(user_settings, command_u, int(args[1]))
@@ -142,13 +137,13 @@ async def parse_and_execute(message : discord.Message, command : str, args : lis
                 response_message = 'BATCH COMMAND:\n'
                 for i in range(len(keys)):
                     key, value = keys[i], values[i]
-                    setting[key] = parse_num(value)
+                    setting[key] = utils.parse_num(value)
                     response_message += f'set {command_u}[{key}] to {setting[key]}\n'
                 await reply(response_message[:-1])
 
             # $<dictionary setting> <key> <value>
             else:
-                setting[args[1]] = parse_num(args[2])
+                setting[args[1]] = utils.parse_num(args[2])
                 await reply(f'set {command_u}[{args[1]}] to {setting[args[1]]}')
 
         dump_user_settings_table()

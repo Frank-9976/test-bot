@@ -10,6 +10,7 @@ class settings_type:
     BASE_PITCH : float
     NOTES : dict[str, float]
     MODIFIERS : dict[str, float]
+    OVERTONES : dict[str, float]
 
 def get_default_settings():
     return settings_type(
@@ -38,4 +39,7 @@ def get_default_settings():
             '+': 2,
             '!': -1,
         },
+        OVERTONES={
+            '1': 1
+        }
     )

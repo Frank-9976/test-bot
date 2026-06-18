@@ -1,5 +1,6 @@
 import math
 from default_settings import settings_type
+import utils
 
 def note_lexer(note : str):
     numbers = ''.join([c for c in note if c.isnumeric()])
@@ -15,6 +16,11 @@ def note_parser(numbers : str, letters : str, other : str, settings : settings_t
     return hz, duration
 
 async def get_samples(notes : list[str], settings : settings_type) -> list[int]:
+    def wave_fn(x : float):
+        total = 0
+        for overtone in settings.OVERTONES:
+            total += settings.OVERTONES[overtone] * math.sin(utils.parse_num(overtone) * x)
+        return total
     x = 0
     dx = 0
     gain = 1
@@ -39,7 +45,7 @@ async def get_samples(notes : list[str], settings : settings_type) -> list[int]:
         gain_target = 0 if hz == 0 else 1
         gain = (1 - settings.GAIN_INTERP_VEL) * gain + settings.GAIN_INTERP_VEL * gain_target
 
-        samples.append(int(math.sin(x) * gain * settings.MAX_GAIN))
+        samples.append(int(wave_fn(x) * gain * settings.MAX_GAIN))
         samples_left -= 1
         
     return samples

@@ -37,7 +37,7 @@ If a valid note is not specified, a rest (silence) is played instead.
 If not specified, the last specified duration is used instead, if it exists.
 Otherwise, the default duration is 8th notes, i.e. n = 8.
 
-"Modifiers": non-alphanumeric characters in any order, i.e. +, -.
+"Modifiers": non-alphanumeric characters in any order, i.e. +, -, !.
 These may stack and provide multiplicative pitch modifiers.
 
 
@@ -68,6 +68,10 @@ Values are relative pitches to the base pitch; they act as multipliers.
 MODIFIERS:
 Keys are non-alphanumeric characters; they must be one character.
 Values are the pitch multipliers that they shall incur.
+
+OVERTONES:
+Keys are ratios to the fundamental frequency, given as a float or fraction.
+Values are amplitudes.
 
 
 $<dictionary setting> [<key 1> <key 2> ...] [<value 1> <value 2> ...]
