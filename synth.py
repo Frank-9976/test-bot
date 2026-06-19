@@ -53,19 +53,23 @@ async def get_samples(notes : list[str], settings : settings_type) -> list[int]:
     return samples
 
 from scipy.fft import fft, ifft
-from numpy import concatenate, linspace
 
-def get_noise_samples(settings : settings_type, pitch : float, dev : float) -> list[int]:
-    n = settings.SAMPLE_RATE // 2
-    samples = [x % int(settings.BASE_PITCH) for x in range(n)]
+def formant_curve(hz : int, peak : int, spread : int):
+    return max(spread - abs(hz - peak), 0)
+
+FORMANTS : dict[str, tuple[int, int]] = {
+    'a': (764, 1322),
+    'e': (526, 2002),
+    'i': (301, 2338),
+    'o': (505, 986),
+    'u': (309, 1047),
+}
+
+def get_noise_samples(settings : settings_type, ipa : str, spread : int) -> list[int]:
+    samples = [x % int(settings.BASE_PITCH) for x in range(settings.SAMPLE_RATE)]
     freqs = fft(samples)
 
-    freqs *= concatenate((
-        linspace(0, 0, pitch - dev), # type: ignore
-        linspace(0, 1, dev), # type: ignore
-        linspace(1, 0, dev), # type: ignore
-        linspace(0, 0, n - pitch - dev), # type: ignore
-    )) # type: ignore
+    freqs *= [sum((formant_curve(hz, peak, spread) for peak in FORMANTS[ipa])) for hz in range(settings.SAMPLE_RATE)]
 
     samples = ifft(freqs).real
     max_sample = max(samples)
