@@ -118,7 +118,7 @@ async def parse_and_execute(message : discord.Message, command : str, args : lis
         return
 
     if command == 'noise':
-        samples = synth.get_noise_samples(user_settings, utils.parse_num(args[1]), utils.parse_num(args[2]))
+        samples = synth.get_noise_samples(user_settings, int(args[1]), int(args[2]))
         buf = synth.buf_from_samples(samples, user_settings)
         await reply(file=discord.File(buf, filename='noise.wav'))
         return
