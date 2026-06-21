@@ -52,7 +52,8 @@ async def get_samples(notes : list[str], settings : settings_type) -> list[int]:
         
     return samples
 
-from scipy.fft import fft, ifft
+from numpy import arange
+from scipy.signal import ShortTimeFFT, get_window
 
 def formant_curve(hz : int, peak : int, spread : int):
     return max(spread - abs(hz - peak), 0)
@@ -65,13 +66,23 @@ FORMANTS : dict[str, tuple[int, int]] = {
     'u': (309, 1047),
 }
 
-def get_noise_samples(settings : settings_type, ipa : str, spread : int) -> list[int]:
-    samples = [x % int(settings.BASE_PITCH) for x in range(settings.SAMPLE_RATE)]
-    freqs = fft(samples)
+async def get_noise_samples(settings : settings_type, ipa : str, spread : int) -> list[int]:
+    samples = arange(len(ipa) * settings.SAMPLE_RATE) % settings.BASE_PITCH
+    win_size : int = 10000
+    hop : int = 1000
+    STFFT = ShortTimeFFT(get_window('hann', win_size), hop, settings.SAMPLE_RATE)
+    freqs = STFFT.stft(samples)
 
-    freqs *= [sum((formant_curve(hz, peak, spread) for peak in FORMANTS[ipa])) for hz in range(settings.SAMPLE_RATE)]
+    for i in range(len(freqs)):
+        for j in range(len(freqs[i])):
+            hz = STFFT.f[i]
+            time = STFFT.delta_t * j
+            if time >= len(ipa):
+                continue
+            phoneme = ipa[math.floor(time)]
+            freqs[i][j] *= sum((formant_curve(hz, peak, spread) for peak in FORMANTS[phoneme]))
 
-    samples = ifft(freqs).real
+    samples = STFFT.istft(freqs).real
     max_sample = max(samples)
     min_sample = min(samples)
     samples = ((samples - min_sample) / (max_sample - min_sample) - 0.5) * 2 * settings.MAX_GAIN
