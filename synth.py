@@ -15,7 +15,7 @@ def note_parser(numbers : str, letters : str, other : str, settings : settings_t
     duration = settings.WHOLE_NOTE / int(numbers) if numbers else duration
     return hz, duration
 
-async def get_samples(notes : list[str], settings : settings_type) -> list[int]:
+def get_samples(notes : list[str], settings : settings_type) -> list[int]:
     def wave_fn(x : float, gain : float):
         total = 0
         for overtone in settings.OVERTONES:
@@ -52,40 +52,77 @@ async def get_samples(notes : list[str], settings : settings_type) -> list[int]:
         
     return samples
 
-from numpy import arange
+import numpy
 from scipy.signal import ShortTimeFFT, get_window
+import random
 
 def formant_curve(hz : int, peak : int, spread : int):
     return max(spread - abs(hz - peak), 0)
 
-FORMANTS : dict[str, tuple[int, int]] = {
-    'a': (764, 1322),
-    'e': (526, 2002),
-    'i': (301, 2338),
-    'o': (505, 986),
-    'u': (309, 1047),
+FORMANTS : dict[str, list[int]] = {
+    'a': [764, 1322],
+    'e': [526, 2002],
+    'i': [301, 2338],
+    'o': [505, 986],
+    'u': [309, 1047],
+    'm': [300, 1250, 2500],
+    'n': [300, 1250, 3000],
+    'p': [1750],
+    't': [3000],
+    'k': [2250],
+    's': [5500],
+    'w': [309, 1047],
+    'j': [301, 2338],
+    'l': [350],
 }
 
-async def get_noise_samples(settings : settings_type, ipa : str, spread : int) -> list[int]:
-    samples = arange(len(ipa) * settings.SAMPLE_RATE) % settings.BASE_PITCH
-    win_size : int = 10000
-    hop : int = 1000
+DURATIONS : dict[str, float] = {
+    'a': 0.3,
+    'e': 0.3,
+    'i': 0.3,
+    'o': 0.3,
+    'u': 0.3,
+    'm': 0.1,
+    'n': 0.1,
+    'p': 0.1,
+    't': 0.1,
+    'k': 0.1,
+    's': 0.1,
+    'w': 0.1,
+    'j': 0.1,
+    'l': 0.1,
+}
+
+def get_noise_samples(settings : settings_type, ipa : str, spread : int, win_size : int, hop : int) -> list[int]:
+    pre_samples : list[float] = []
+    vowel_table : list[str] = []
+    for phoneme in ipa:
+        num_samples = int(DURATIONS[phoneme] * settings.SAMPLE_RATE)
+        for x in range(num_samples):
+            if phoneme == 'p' or phoneme == 't' or phoneme == 'k':
+                sample = 0 #???
+            elif phoneme == 's':
+                sample = random.randrange(0, int(settings.BASE_PITCH))
+            else:
+                sample = x % settings.BASE_PITCH
+            pre_samples.append(sample)
+            vowel_table.append(phoneme)
+
     STFFT = ShortTimeFFT(get_window('hann', win_size), hop, settings.SAMPLE_RATE)
-    freqs = STFFT.stft(samples)
+    freqs = STFFT.stft(numpy.array(pre_samples))
 
     for i in range(len(freqs)):
         for j in range(len(freqs[i])):
             hz = STFFT.f[i]
-            time = STFFT.delta_t * j
-            if time >= len(ipa):
+            x = math.floor(STFFT.delta_t * j * settings.SAMPLE_RATE)
+            if x >= len(vowel_table):
                 continue
-            phoneme = ipa[math.floor(time)]
+            phoneme = vowel_table[x]
             freqs[i][j] *= sum((formant_curve(hz, peak, spread) for peak in FORMANTS[phoneme]))
 
-    samples = STFFT.istft(freqs).real
-    max_sample = max(samples)
-    min_sample = min(samples)
-    samples = ((samples - min_sample) / (max_sample - min_sample) - 0.5) * 2 * settings.MAX_GAIN
+    post_samples = STFFT.istft(freqs).real
+    post_samples_min = post_samples.min()
+    samples = ((post_samples - post_samples_min) / (post_samples.max() - post_samples_min) - 0.5) * 2 * settings.MAX_GAIN
     return [int(x) for x in samples]
 
 import wave

@@ -109,7 +109,7 @@ async def parse_and_execute(message : discord.Message, command : str, args : lis
         notes = args[1:] + ['9'] # fade to silence at end
         
         await reply('building waveform...')
-        samples = await synth.get_samples(notes, user_settings)
+        samples = synth.get_samples(notes, user_settings)
         
         await edit('uploading file...')
         buf = synth.buf_from_samples(samples, user_settings)
@@ -118,8 +118,12 @@ async def parse_and_execute(message : discord.Message, command : str, args : lis
         return
 
     if command == 'noise':
+
         await reply('building waveform...')
-        samples = await synth.get_noise_samples(user_settings, args[1], int(args[2]))
+        spread = int(args[2]) if len(args) > 2 else 250
+        win_size = int(args[3]) if len(args) > 3 else 10000
+        hop = int(args[4]) if len(args) > 4 else 1000
+        samples = synth.get_noise_samples(user_settings, args[1], spread, win_size, hop)
 
         await edit('uploading file...')
         buf = synth.buf_from_samples(samples, user_settings)
